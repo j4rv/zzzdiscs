@@ -5,8 +5,8 @@ type DiscSlot int
 const (
 	Slot1 DiscSlot = iota
 	Slot2
-	Slot4
 	Slot3
+	Slot4
 	Slot5
 	Slot6
 )

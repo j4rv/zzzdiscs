@@ -3,6 +3,8 @@ package zzzdiscs
 type DiscSet string
 
 var SetNameToID = map[DiscSet]int{
+	"ShiningAria":       336,
+	"WhiteWaterBallad":  335,
 	"MoonlightLullaby":  334,
 	"DawnsBloom":        333,
 	"KingOfTheSummit":   332,
@@ -25,8 +27,6 @@ var SetNameToID = map[DiscSet]int{
 	"ShockstarDisco":    312,
 	"PufferElectro":     311,
 	"WoodpeckerElectro": 310,
-	"WhiteWaterBallad":  335,
-	"ShiningAria":       336,
 }
 
 var AllDiscSets []DiscSet

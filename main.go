@@ -55,7 +55,7 @@ func (a Disc) hasSubstat(s stat) bool {
 func (a Disc) subsQuality(wantedSubWeights map[stat]float32) float32 {
 	var quality float32
 	for _, sub := range a.SubStats {
-		quality += wantedSubWeights[sub.Stat]
+		quality += wantedSubWeights[sub.Stat] * float32(sub.Rolls)
 	}
 	return quality
 }
@@ -73,6 +73,12 @@ func (a Disc) cv() int {
 	return cv
 }
 
+func (a *Disc) setMainStat(s stat) {
+	a.MainStat.Stat = s
+	a.MainStat.BaseValue = mainStatValues[s]
+	a.MainStat.Value = mainStatValues[s]
+}
+
 func (a *Disc) randomizeSet(options ...DiscSet) {
 	a.Set = options[rand.Intn(len(options))]
 }
@@ -84,24 +90,22 @@ func (a *Disc) randomizeSlot() {
 func (a *Disc) ranzomizeMainStat() {
 	switch a.Slot {
 	case Slot1:
-		a.MainStat.Stat = HP
+		a.setMainStat(HP)
 	case Slot2:
-		a.MainStat.Stat = ATK
+		a.setMainStat(ATK)
 	case Slot3:
-		a.MainStat.Stat = DEF
+		a.setMainStat(DEF)
 	case Slot4:
-		a.MainStat.Stat = d4StatsRandChooser.Pick()
+		a.setMainStat(d4StatsRandChooser.Pick())
 	case Slot5:
-		a.MainStat.Stat = d5StatsRandChooser.Pick()
+		a.setMainStat(d5StatsRandChooser.Pick())
 	case Slot6:
-		a.MainStat.Stat = d6StatsRandChooser.Pick()
+		a.setMainStat(d6StatsRandChooser.Pick())
 	}
-	a.MainStat.BaseValue = mainStatValues[a.MainStat.Stat]
-	a.MainStat.Value = mainStatValues[a.MainStat.Stat]
 }
 
-func (a *Disc) randomizeSubstats(base4Chance float32, maxLevel bool) {
-	numRolls := 3 + 5 // starts with 3 subs by default
+func (a *Disc) randomizeSubstats(base4Chance float32, maxLevel bool, chosen ...stat) {
+	numRolls := 3 + 5
 	if rand.Float32() <= base4Chance {
 		numRolls++ // starts with 4 subs
 		a.IsFourLiner = true
@@ -109,71 +113,83 @@ func (a *Disc) randomizeSubstats(base4Chance float32, maxLevel bool) {
 
 	a.SubStats = [MaxSubstats]*DiscStat{}
 	possibleStats := weightedSubstats(a.MainStat.Stat)
-	var subs [MaxSubstats]stat
 
-	for i := 0; i < numRolls; i++ {
+	if len(chosen) > MaxSubstats {
+		chosen = chosen[:MaxSubstats]
+	}
+
+	// First add the chosen substats
+	for i, s := range chosen {
+		a.SubStats[i] = &DiscStat{
+			Stat:      s,
+			Rolls:     1,
+			BaseValue: substatValues[s],
+			Value:     substatValues[s],
+		}
+		delete(possibleStats, s)
+	}
+
+	for i := len(chosen); i < numRolls; i++ {
 		// Stop before adding the 4th substat if it's a 3-liner and not max level
 		if i == 3 && !maxLevel && !a.IsFourLiner {
 			break
 		}
-		// First 3-4 rolls
+
 		if i < MaxSubstats {
+			// Add new substat
 			artiStat := weightedRand(possibleStats)
-			subs[i] = artiStat
-			a.SubStats[i] = &DiscStat{Stat: artiStat, Rolls: 1, BaseValue: substatValues[artiStat], Value: substatValues[artiStat]}
+			a.SubStats[i] = &DiscStat{
+				Stat:      artiStat,
+				Rolls:     1,
+				BaseValue: substatValues[artiStat],
+				Value:     substatValues[artiStat],
+			}
 			delete(possibleStats, artiStat)
 		} else {
-			// Rest of rolls, if max level
+			// Roll existing substat
 			index := rand.Intn(MaxSubstats)
-			a.SubStats[index].Rolls += 1
+			a.SubStats[index].Rolls++
 			a.SubStats[index].Value += a.SubStats[index].BaseValue
 		}
 	}
 }
 
-func RandomDisc(base4Chance float32) *Disc {
+// Deprecated
+func RandomDiscSimple() *Disc {
 	var disc Disc
 	disc.randomizeSet(AllDiscSets...)
-	disc.randomizeSlot()
-	disc.ranzomizeMainStat()
-	disc.randomizeSubstats(base4Chance, true)
-	return &disc
-}
-
-func RandomDiscOfSetAndSlot(set DiscSet, slot DiscSlot, base4Chance float32) *Disc {
-	var disc Disc
-	disc.Set = set
-	disc.Slot = slot
-	disc.ranzomizeMainStat()
-	disc.randomizeSubstats(base4Chance, true)
-	return &disc
-}
-
-func RandomDiscOfSlot(slot DiscSlot, base4Chance float32) *Disc {
-	var disc Disc
-	disc.randomizeSet(AllDiscSets...)
-	disc.Slot = slot
-	disc.ranzomizeMainStat()
-	disc.randomizeSubstats(base4Chance, true)
-	return &disc
-}
-
-func RandomDiscOfSet(set string, base4Chance float32) *Disc {
-	var disc Disc
-	disc.Set = DiscSet(set)
-	disc.randomizeSlot()
-	disc.ranzomizeMainStat()
-	disc.randomizeSubstats(base4Chance, true)
-	return &disc
-}
-
-func RandomDiscFromDomain(setA, setB string) *Disc {
-	var disc Disc
-	disc.randomizeSet(DiscSet(setA), DiscSet(setB))
 	disc.randomizeSlot()
 	disc.ranzomizeMainStat()
 	disc.randomizeSubstats(Base4Chance, true)
 	return &disc
+}
+
+// Deprecated
+func RandomDiscOfSetAndSlot(set DiscSet, slot DiscSlot, base4Chance float32) *Disc {
+	return RandomDisc()
+}
+
+// Deprecated
+func RandomDiscOfSlot(slot DiscSlot, base4Chance float32) *Disc {
+	return RandomDisc(
+		WithSlot(slot),
+		WithBase4Chance(base4Chance),
+	)
+}
+
+// Deprecated
+func RandomDiscOfSet(set string, base4Chance float32) *Disc {
+	return RandomDisc(
+		WithSet(DiscSet(set)),
+		WithBase4Chance(base4Chance),
+	)
+}
+
+// Deprecated
+func RandomDiscFromDomain(setA, setB string) *Disc {
+	disc := RandomDisc()
+	disc.randomizeSet(DiscSet(setA), DiscSet(setB))
+	return disc
 }
 
 // RemoveTrashDiscs processes a slice of discs and keeps the best ones that have the correct mainstat

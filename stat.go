@@ -141,7 +141,7 @@ func (s stat) String() string {
 // And my own weights study
 // Left: Sixth Alley data, Right: My data
 
-var d4StatsRandChooser, _ = weightedrand.NewChooser[stat](
+var d4StatsRandChooser, _ = weightedrand.NewChooser(
 	weightedrand.NewChoice(stat(HPP), 1740+100),
 	weightedrand.NewChoice(stat(ATKP), 1479+90),
 	weightedrand.NewChoice(stat(DEFP), 1660+116),
@@ -151,7 +151,7 @@ var d4StatsRandChooser, _ = weightedrand.NewChooser[stat](
 )
 
 var d5DmgWeight int = ((523 + 497 + 493 + 492 + 486) + (29 + 38 + 25 + 32 + 26)) / 5
-var d5StatsRandChooser, _ = weightedrand.NewChooser[stat](
+var d5StatsRandChooser, _ = weightedrand.NewChooser(
 	weightedrand.NewChoice(stat(HPP), 1710+106),
 	weightedrand.NewChoice(stat(ATKP), 1447+80),
 	weightedrand.NewChoice(stat(DEFP), 1733+92),
@@ -163,7 +163,7 @@ var d5StatsRandChooser, _ = weightedrand.NewChooser[stat](
 	weightedrand.NewChoice(stat(IceDMG), d5DmgWeight),
 )
 
-var d6StatsRandChooser, _ = weightedrand.NewChooser[stat](
+var d6StatsRandChooser, _ = weightedrand.NewChooser(
 	weightedrand.NewChoice(stat(HPP), 1659+99),
 	weightedrand.NewChoice(stat(ATKP), 1393+95),
 	weightedrand.NewChoice(stat(DEFP), 1609+105),
